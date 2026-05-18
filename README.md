@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/Architecture-Clean-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/DDD-Hexagonal-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/EF_Core-SQLite-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/Tests-18_passing-success?style=flat-square" />
+  <img src="https://img.shields.io/badge/Tests-15_passing-success?style=flat-square" />
   <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square" />
 </p>
 
@@ -30,55 +30,57 @@ This is not a CRUD. It is a backend engine that demonstrates real system design 
 
 ### Swagger UI — 14 endpoints across 3 groups
 
-![Swagger UI](assets/swagger-ui.png)
+[![Swagger UI](assets/swagger-ui.png)](assets/swagger-ui.png)
 
 ### Scheduler — Processing 5 concurrent executions
 
-![Scheduler Logs](assets/scheduler-logs.png)
+[![Scheduler Logs](assets/scheduler-logs.png)](assets/scheduler-logs.png)
 
 ### Dashboard Summary — Real-time execution monitoring
 
-![Dashboard](assets/dashboard.png)
+[![Dashboard](assets/dashboard.png)](assets/dashboard.png)
 
 ### Health Check — Service status endpoint
 
-![Health Check](assets/health-check.png)
+[![Health Check](assets/health-check.png)](assets/health-check.png)
 
 ---
 
 ## Key Design Decisions
 
-**JobDefinition and JobExecution are separate aggregates.** Defining a job and running it are different concepts. A JobDefinition is a template — it holds the type, retry policy, cron expression and enabled state. A JobExecution is a record of one run — it owns its lifecycle, its logs, its attempt number.
+**JobDefinition and JobExecution are separate aggregates.** Defining a job and running it are different concepts. A `JobDefinition` is a template — it holds the type, retry policy, cron expression and enabled state. A `JobExecution` is a record of one run — it owns its lifecycle, its logs, its attempt number.
 
-**RetryPolicy is a Value Object.** It is not a pair of loose fields. It is a domain concept with its own invariants, embedded directly in the JobDefinition aggregate.
+**RetryPolicy is a Value Object.** It is not a pair of loose fields. It is a domain concept with its own invariants, embedded directly in the `JobDefinition` aggregate.
 
-**ExecutionStatus has 7 states.** Pending → Running → Completed / Failed / TimedOut / Cancelled / Retrying. State transitions are enforced by the domain — invalid transitions throw JobDomainException.
+**ExecutionStatus has 7 states.** State transitions are enforced by the domain — invalid transitions throw `JobDomainException`.
 
-**Handlers are registered by JobType string.** JobHandlerRegistry resolves the correct IJobHandler at runtime. Adding a new job type requires only a new handler class — no changes to the engine.
+**Handlers are registered by JobType string.** `JobHandlerRegistry` resolves the correct `IJobHandler` at runtime. Adding a new job type requires only a new handler class — no changes to the engine.
 
-**The scheduler is a HostedService.** It polls every 15 seconds for Pending and Retrying executions, resolves their handler, runs them, and updates status. It never crashes the host — all errors are caught per-execution.
+**The scheduler is a HostedService.** It polls every 15 seconds for Pending and Retrying executions. It never crashes the host — all errors are caught per-execution.
 
 ---
 
 ## Tech Stack
 
-| Technology | Version | Role |
-| --- | --- | --- |
-| .NET | 8.0 | Runtime |
-| C# | 12 | Language |
-| ASP.NET Core | 8.0 | Web API |
-| Entity Framework Core | 8.0 | ORM |
-| SQLite | — | Database |
-| xUnit | 2.7 | Test framework |
-| FluentAssertions | 6.12 | Test assertions |
-| Moq | 4.20 | Mocking |
-| Swashbuckle | 6.6 | Swagger / OpenAPI |
+| Technology            | Version | Role              |
+| --------------------- | ------- | ----------------- |
+| .NET                  | 8.0     | Runtime           |
+| C#                    | 12      | Language          |
+| ASP.NET Core          | 8.0     | Web API           |
+| Entity Framework Core | 8.0     | ORM               |
+| SQLite                | —       | Database          |
+| xUnit                 | 2.7     | Test framework    |
+| FluentAssertions      | 6.12    | Test assertions   |
+| Moq                   | 4.20    | Mocking           |
+| Swashbuckle           | 6.6     | Swagger / OpenAPI |
 
 ---
 
 ## Architecture
 
 Clean Architecture + Hexagonal Architecture + Tactical DDD.
+
+```text
 SaqueroJobs/
 ├── Domain          Pure C#. No framework dependencies.
 │                   Entities, Value Objects, Enums, Domain rules.
@@ -90,34 +92,38 @@ SaqueroJobs/
 │                   Implements the ports defined in Application and Domain.
 │
 └── Api             Controllers, Middleware, Program.cs.
-Entry point. Wires everything together.
+                    Entry point. Wires everything together.
+```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for full design documentation.
 
 ---
 
 ## Execution Lifecycle
-                ┌─────────┐
-                │ Pending │ ◄─── Created by trigger or scheduler
-                └────┬────┘
-                     │
-                ┌────▼────┐
-                │ Running │
-                └────┬────┘
-       ┌─────────────┼─────────────┐
-  ┌────▼────┐   ┌────▼────┐   ┌───▼──────┐
-  │Completed│   │ Failed  │   │ TimedOut │
-  └─────────┘   └────┬────┘   └────┬─────┘
-                     │             │
-                ┌────▼─────────────▼────┐
-                │       Retrying        │
-                └───────────┬───────────┘
-                            │
-                       ┌────▼────┐
-                       │ Running │  (next attempt)
-                       └─────────┘
 
-   Cancelled ◄── from Pending or Running only
+```text
+              ┌─────────┐
+              │ Pending │ ◄─── Created by trigger or scheduler
+              └────┬────┘
+                   │
+              ┌────▼────┐
+              │ Running │
+              └────┬────┘
+     ┌─────────────┼─────────────┐
+┌────▼────┐   ┌────▼────┐   ┌───▼──────┐
+│Completed│   │ Failed  │   │ TimedOut │
+└─────────┘   └────┬────┘   └────┬─────┘
+                   │             │
+              ┌────▼─────────────▼────┐
+              │       Retrying        │
+              └───────────┬───────────┘
+                          │
+                     ┌────▼────┐
+                     │ Running │  (next attempt)
+                     └─────────┘
+
+Cancelled ◄── from Pending or Running only
+```
 
 ---
 
@@ -125,44 +131,44 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full design documentation.
 
 ### Job Definitions
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| POST | /api/jobs | Create a job definition |
-| GET | /api/jobs | List all definitions |
-| GET | /api/jobs/{id} | Get definition by ID |
-| PATCH | /api/jobs/{id}/enable | Enable a job |
-| PATCH | /api/jobs/{id}/disable | Disable a job |
-| POST | /api/jobs/{id}/run | Trigger manual execution |
-| GET | /api/jobs/{id}/executions | List executions for a job |
+| Method | Endpoint                  | Description               |
+| ------ | ------------------------- | ------------------------- |
+| POST   | /api/jobs                 | Create a job definition   |
+| GET    | /api/jobs                 | List all definitions      |
+| GET    | /api/jobs/{id}            | Get definition by ID      |
+| PATCH  | /api/jobs/{id}/enable     | Enable a job              |
+| PATCH  | /api/jobs/{id}/disable    | Disable a job             |
+| POST   | /api/jobs/{id}/run        | Trigger manual execution  |
+| GET    | /api/jobs/{id}/executions | List executions for a job |
 
 ### Executions
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| GET | /api/executions | List all executions (?status=filter) |
-| GET | /api/executions/{id} | Get execution by ID |
-| PATCH | /api/executions/{id}/cancel | Cancel execution |
-| POST | /api/executions/{id}/retry | Retry failed execution |
-| GET | /api/executions/{id}/logs | Get execution logs |
+| Method | Endpoint                    | Description                          |
+| ------ | --------------------------- | ------------------------------------ |
+| GET    | /api/executions             | List all executions (?status=filter) |
+| GET    | /api/executions/{id}        | Get execution by ID                  |
+| PATCH  | /api/executions/{id}/cancel | Cancel execution                     |
+| POST   | /api/executions/{id}/retry  | Retry failed execution               |
+| GET    | /api/executions/{id}/logs   | Get execution logs                   |
 
 ### Monitoring
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| GET | /api/dashboard/summary | System-wide execution summary |
-| GET | /health | Service health check |
+| Method | Endpoint               | Description                   |
+| ------ | ---------------------- | ----------------------------- |
+| GET    | /api/dashboard/summary | System-wide execution summary |
+| GET    | /health                | Service health check          |
 
 ---
 
 ## Job Types
 
-| Job Type | Description |
-| --- | --- |
-| SyncExternalOrdersJob | Synchronizes orders from an external API |
-| GenerateDailyReportJob | Generates and stores the daily business report |
-| CleanExpiredSessionsJob | Removes expired user sessions from the database |
+| Job Type                    | Description                                         |
+| --------------------------- | --------------------------------------------------- |
+| SyncExternalOrdersJob       | Synchronizes orders from an external API            |
+| GenerateDailyReportJob      | Generates and stores the daily business report      |
+| CleanExpiredSessionsJob     | Removes expired user sessions from the database     |
 | RecalculateCustomerUsageJob | Recalculates usage metrics for all active customers |
-| SendNotificationBatchJob | Processes and sends pending notification batches |
+| SendNotificationBatchJob    | Processes and sends pending notification batches    |
 
 ---
 
@@ -191,7 +197,12 @@ Health check: `http://localhost:5200/health`
 dotnet test
 ```
 
-Current test suite: **18 tests, 0 failures**`r`n`r`n- `JobDefinitionTests` — definition creation, validation, enable/disable and retry policy behavior`r`n- `JobExecutionTests` — lifecycle transitions, failure handling, cancellation and retry eligibility`r`n- `RetryPolicyTests` — value object validation
+Current test suite: **15 tests, 0 failures**
+
+- `JobTests` — 9 domain tests covering all state transitions
+- `EnqueueJobUseCaseTests` — 2 application tests
+- `GetJobStatusUseCaseTests` — 2 application tests
+- `RetryJobUseCaseTests` — 1 application test
 
 ### Example Requests
 
@@ -222,30 +233,30 @@ Invoke-RestMethod -Uri "http://localhost:5200/api/executions/{id}/retry" -Method
 
 ## Part of the Saquero Backend Ecosystem
 
-| Project | Stack | Description |
-| --- | --- | --- |
-| [SaqueroCloud](https://github.com/Saquero/SaqueroCloud) | .NET 8 + React | SaaS admin platform, JWT auth, subscription management |
-| [SaqueroOrderCore](https://github.com/Saquero/SaqueroOrderCore) | Java 21 + Spring Boot 3 | Order lifecycle backend, DDD, Hexagonal |
-| SaqueroJobs | .NET 8 | Background job processing engine |
-| SaqueroGateway | .NET 8 | API Gateway — in progress |
+| Project                                                         | Stack                   | Description                                            |
+| --------------------------------------------------------------- | ----------------------- | ------------------------------------------------------ |
+| [SaqueroCloud](https://github.com/Saquero/SaqueroCloud)         | .NET 8 + React          | SaaS admin platform, JWT auth, subscription management |
+| [SaqueroOrderCore](https://github.com/Saquero/SaqueroOrderCore) | Java 21 + Spring Boot 3 | Order lifecycle backend, DDD, Hexagonal                |
+| SaqueroJobs                                                     | .NET 8                  | Background job processing engine                       |
+| SaqueroGateway                                                  | .NET 8                  | API Gateway — in progress                              |
 
 ---
 
 ## Ecosystem Health
 
-| Service | Port | Health |
-| --- | --- | --- |
-| SaqueroCloud | 5000 | /health ✅ |
+| Service          | Port | Health              |
+| ---------------- | ---- | ------------------- |
+| SaqueroCloud     | 5000 | /health ✅          |
 | SaqueroOrderCore | 8080 | /actuator/health ✅ |
-| SaqueroJobs | 5200 | /health ✅ |
-| SaqueroGateway | 5100 | in progress 🔜 |
+| SaqueroJobs      | 5200 | /health ✅          |
+| SaqueroGateway   | 5100 | in progress 🔜      |
 
 ---
 
 ## Future Improvements
 
-- SaqueroGateway integration (routes all ecosystem traffic)
-- Cron expression evaluation (schedule by time pattern)
+- SaqueroGateway integration
+- Cron expression evaluation
 - Docker Compose for full ecosystem
 - PostgreSQL support
 - CI/CD pipeline
@@ -263,5 +274,3 @@ Invoke-RestMethod -Uri "http://localhost:5200/api/executions/{id}/retry" -Method
     <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" />
   </a>
 </p>
-
-
