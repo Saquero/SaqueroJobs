@@ -1,16 +1,16 @@
-<p align="center">
+﻿<p align="center">
   <img src="assets/logo-saquero-jobs.svg" alt="SaqueroJobs" width="180"/>
 </p>
 
 <h1 align="center">SaqueroJobs</h1>
-<p align="center">Background Job Processing Engine â€” .NET 8 Â· Clean Architecture Â· DDD Â· Hexagonal Architecture</p>
+<p align="center">Background Job Processing Engine -- .NET 8 · Clean Architecture · DDD · Hexagonal Architecture</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet" />
   <img src="https://img.shields.io/badge/Architecture-Clean-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/DDD-Hexagonal-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/EF_Core-SQLite-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/Tests-15_passing-success?style=flat-square" />
+  <img src="https://img.shields.io/badge/Tests-18_passing-success?style=flat-square" />
   <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square" />
 </p>
 
@@ -20,7 +20,7 @@
 
 SaqueroJobs is a production-style background job processing engine built with **.NET 8**.
 
-It simulates how real enterprise platforms handle background work: defining jobs, triggering executions, tracking lifecycle states, logging execution steps, and retrying failures â€” all with clean architecture and a professional API surface.
+It simulates how real enterprise platforms handle background work: defining jobs, triggering executions, tracking lifecycle states, logging execution steps, and retrying failures -- all with clean architecture and a professional API surface.
 
 This is not a CRUD. It is a backend engine that demonstrates real system design thinking.
 
@@ -28,35 +28,35 @@ This is not a CRUD. It is a backend engine that demonstrates real system design 
 
 ## Preview
 
-### Swagger UI â€” 14 endpoints across 3 groups
+### Swagger UI -- 14 endpoints across 3 groups
 
-[![Swagger UI](assets/swagger-ui.png)](assets/swagger-ui.png)
+![Swagger UI](assets/swagger-ui.png)
 
-### Scheduler â€” Processing 5 concurrent executions
+### Scheduler -- Processing concurrent executions
 
-[![Scheduler Logs](assets/scheduler-logs.png)](assets/scheduler-logs.png)
+![Scheduler Logs](assets/scheduler-logs.png)
 
-### Dashboard Summary â€” Real-time execution monitoring
+### Dashboard Summary -- Real-time execution monitoring
 
-[![Dashboard](assets/dashboard.png)](assets/dashboard.png)
+![Dashboard](assets/dashboard.png)
 
-### Health Check â€” Service status endpoint
+### Health Check -- Service status endpoint
 
-[![Health Check](assets/health-check.png)](assets/health-check.png)
+![Health Check](assets/health-check.png)
 
 ---
 
 ## Key Design Decisions
 
-**JobDefinition and JobExecution are separate aggregates.** Defining a job and running it are different concepts. A `JobDefinition` is a template â€” it holds the type, retry policy, cron expression and enabled state. A `JobExecution` is a record of one run â€” it owns its lifecycle, its logs, its attempt number.
+**JobDefinition and JobExecution are separate aggregates.** Defining a job and running it are different concepts. A `JobDefinition` is a template -- it holds the type, retry policy, cron expression and enabled state. A `JobExecution` is a record of one run -- it owns its lifecycle, its logs, its attempt number.
 
 **RetryPolicy is a Value Object.** It is not a pair of loose fields. It is a domain concept with its own invariants, embedded directly in the `JobDefinition` aggregate.
 
-**ExecutionStatus has 7 states.** State transitions are enforced by the domain â€” invalid transitions throw `JobDomainException`.
+**ExecutionStatus has 7 states.** State transitions are enforced by the domain -- invalid transitions throw `JobDomainException`.
 
-**Handlers are registered by JobType string.** `JobHandlerRegistry` resolves the correct `IJobHandler` at runtime. Adding a new job type requires only a new handler class â€” no changes to the engine.
+**Handlers are registered by JobType string.** `JobHandlerRegistry` resolves the correct `IJobHandler` at runtime. Adding a new job type requires only a new handler class -- no changes to the engine.
 
-**The scheduler is a HostedService.** It polls every 15 seconds for Pending and Retrying executions. It never crashes the host â€” all errors are caught per-execution.
+**The scheduler is a HostedService.** It polls every 15 seconds for Pending and Retrying executions. It never crashes the host -- all errors are caught per-execution.
 
 ---
 
@@ -68,7 +68,7 @@ This is not a CRUD. It is a backend engine that demonstrates real system design 
 | C#                    | 12      | Language          |
 | ASP.NET Core          | 8.0     | Web API           |
 | Entity Framework Core | 8.0     | ORM               |
-| SQLite                | â€”       | Database          |
+| SQLite                | --      | Database          |
 | xUnit                 | 2.7     | Test framework    |
 | FluentAssertions      | 6.12    | Test assertions   |
 | Moq                   | 4.20    | Mocking           |
@@ -82,16 +82,16 @@ Clean Architecture + Hexagonal Architecture + Tactical DDD.
 
 ```text
 SaqueroJobs/
-â”œâ”€â”€ Domain          Pure C#. No framework dependencies.
-â”‚                   Entities, Value Objects, Enums, Domain rules.
-â”‚
-â”œâ”€â”€ Application     Use Cases, DTOs, Mappers, Port interfaces.
-â”‚                   Orchestrates domain logic. No infrastructure knowledge.
-â”‚
-â”œâ”€â”€ Infrastructure  EF Core, SQLite, Job Handlers, Scheduler.
-â”‚                   Implements the ports defined in Application and Domain.
-â”‚
-â””â”€â”€ Api             Controllers, Middleware, Program.cs.
++-- Domain          Pure C#. No framework dependencies.
+|                   Entities, Value Objects, Enums, Domain rules.
+|
++-- Application     Use Cases, DTOs, Mappers, Port interfaces.
+|                   Orchestrates domain logic. No infrastructure knowledge.
+|
++-- Infrastructure  EF Core, SQLite, Job Handlers, Scheduler.
+|                   Implements the ports defined in Application and Domain.
+|
++-- Api             Controllers, Middleware, Program.cs.
                     Entry point. Wires everything together.
 ```
 
@@ -102,27 +102,28 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full design documentation.
 ## Execution Lifecycle
 
 ```text
-              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-              â”‚ Pending â”‚ â—„â”€â”€â”€ Created by trigger or scheduler
-              â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜
-                   â”‚
-              â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”
-              â”‚ Running â”‚
-              â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜
-     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”
-â”‚Completedâ”‚   â”‚ Failed  â”‚   â”‚ TimedOut â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
-                   â”‚             â”‚
-              â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”
-              â”‚       Retrying        â”‚
-              â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                          â”‚
-                     â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”
-                     â”‚ Running â”‚  (next attempt)
-                     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+         +---------+
+         | Pending | <---- Created by trigger or scheduler
+         +----+----+
+              |
+         +----v----+
+         | Running |
+         +----+----+
++-------------+-------------+
+|             |             |
++----v----+ +-v-------+ +---v------+
+|Completed| | Failed  | | TimedOut |
++---------+ +----+----+ +----+-----+
+                 |            |
+         +-------v------------v-------+
+         |         Retrying           |
+         +-----------+----------------+
+                     |
+                +----v----+
+                | Running |  (next attempt)
+                +---------+
 
-Cancelled â—„â”€â”€ from Pending or Running only
+Cancelled <-- from Pending or Running only
 ```
 
 ---
@@ -197,12 +198,11 @@ Health check: `http://localhost:5200/health`
 dotnet test
 ```
 
-Current test suite: **15 tests, 0 failures**
+Current test suite: **18 tests, 0 failures**
 
-- `JobTests` â€” 9 domain tests covering all state transitions
-- `EnqueueJobUseCaseTests` â€” 2 application tests
-- `GetJobStatusUseCaseTests` â€” 2 application tests
-- `RetryJobUseCaseTests` â€” 1 application test
+- `JobDefinitionTests` -- definition creation, validation, enable/disable and retry policy behavior
+- `JobExecutionTests` -- lifecycle transitions, failure handling, cancellation and retry eligibility
+- `RetryPolicyTests` -- value object validation
 
 ### Example Requests
 
@@ -244,18 +244,17 @@ Invoke-RestMethod -Uri "http://localhost:5200/api/executions/{id}/retry" -Method
 
 ## Ecosystem Health
 
-| Service          | Port | Health              |
-| ---------------- | ---- | ------------------- |
-| SaqueroCloud     | 5000 | /health âœ…          |
-| SaqueroOrderCore | 8080 | /actuator/health âœ… |
-| SaqueroJobs      | 5200 | /health âœ…          |
-| SaqueroGateway   | 5100 | in progress ðŸ”œ      |
+| Service          | Port | Health                                                    |
+| ---------------- | ---- | --------------------------------------------------------- |
+| SaqueroGateway   | 5100 | [/health](http://localhost:5100/health)                   |
+| SaqueroCloud     | 5000 | [/health](http://localhost:5000/health)                   |
+| SaqueroOrderCore | 8080 | [/actuator/health](http://localhost:8080/actuator/health) |
+| SaqueroJobs      | 5200 | [/health](http://localhost:5200/health)                   |
 
 ---
 
 ## Future Improvements
 
-- SaqueroGateway integration
 - Cron expression evaluation
 - Docker Compose for full ecosystem
 - PostgreSQL support
