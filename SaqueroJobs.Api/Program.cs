@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using SaqueroJobs.Api.Middleware;
 using SaqueroJobs.Application.Interfaces;
@@ -25,20 +25,25 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// DbContext para requests HTTP normales (Scoped)
 builder.Services.AddDbContext<JobsDbContext>(options =>
     options.UseSqlite("Data Source=saquero_jobs.db"));
+
+// DbContextFactory para el scheduler (BackgroundService = Singleton)
+// Cada ciclo del scheduler crea su propio DbContext limpio via factory
+builder.Services.AddDbContextFactory<JobsDbContext>(options =>
+    options.UseSqlite("Data Source=saquero_jobs.db"),
+    ServiceLifetime.Scoped);
 
 builder.Services.AddScoped<IJobDefinitionRepository, JobDefinitionRepository>();
 builder.Services.AddScoped<IJobExecutionRepository,  JobExecutionRepository>();
 builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
-
 builder.Services.AddScoped<IJobHandler, SyncExternalOrdersHandler>();
 builder.Services.AddScoped<IJobHandler, GenerateDailyReportHandler>();
 builder.Services.AddScoped<IJobHandler, CleanExpiredSessionsHandler>();
 builder.Services.AddScoped<IJobHandler, RecalculateCustomerUsageHandler>();
 builder.Services.AddScoped<IJobHandler, SendNotificationBatchHandler>();
 builder.Services.AddScoped<IJobHandlerRegistry, JobHandlerRegistry>();
-
 builder.Services.AddScoped<CreateJobDefinitionUseCase>();
 builder.Services.AddScoped<ListJobDefinitionsUseCase>();
 builder.Services.AddScoped<GetJobDefinitionUseCase>();
@@ -51,7 +56,6 @@ builder.Services.AddScoped<CancelExecutionUseCase>();
 builder.Services.AddScoped<RetryExecutionUseCase>();
 builder.Services.AddScoped<GetExecutionLogsUseCase>();
 builder.Services.AddScoped<GetDashboardSummaryUseCase>();
-
 builder.Services.AddHostedService<JobSchedulerService>();
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
@@ -85,8 +89,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "SaqueroJobs v1");
     c.RoutePrefix = "swagger";
 });
-
 app.MapControllers();
 app.MapHealthChecks("/health");
-
 app.Run();
